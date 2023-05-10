@@ -1,0 +1,64 @@
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: alidns-webhook-selfsign
+  namespace: cert-manager
+  labels:
+    app: alidns-webhook
+spec:
+  selfSigned: {}
+
+---
+
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: alidns-webhook-ca
+  namespace: cert-manager
+  labels:
+    app: alidns-webhook
+spec:
+  secretName: alidns-webhook-ca
+  duration: 87600h # 10y
+  issuerRef:
+    name: alidns-webhook-selfsign
+  commonName: "ca.alidns-webhook.cert-manager"
+  isCA: true
+
+---
+
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: alidns-webhook-ca
+  namespace: cert-manager
+  labels:
+    app: alidns-webhook
+spec:
+  ca:
+    secretName: alidns-webhook-ca
+
+---
+
+# Finally, generate a serving certificate for the webhook to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: alidns-webhook-webhook-tls
+  namespace: cert-manager
+  labels:
+    app: alidns-webhook
+spec:
+  secretName: alidns-webhook-webhook-tls
+  duration: 87600h # 10y
+  issuerRef:
+    name: alidns-webhook-ca
+  dnsNames:
+  - alidns-webhook
+  - alidns-webhook.cert-manager
+  - alidns-webhook.cert-manager.svc
+  - alidns-webhook.cert-manager.svc.master-shanghai

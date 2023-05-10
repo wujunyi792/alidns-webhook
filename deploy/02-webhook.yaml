@@ -37,14 +37,14 @@ spec:
       serviceAccountName: alidns-webhook
       containers:
         - name: alidns-webhook
-          image: pragkent/alidns-webhook:0.1.1
+          image: wujunyi792/alidns:sha-6bfb799a-t
           imagePullPolicy: IfNotPresent
           args:
             - --tls-cert-file=/tls/tls.crt
             - --tls-private-key-file=/tls/tls.key
           env:
             - name: GROUP_NAME
-              value: "acme.yourcompany.com"
+              value: "acme.mjclouds.com"
           ports:
             - name: https
               containerPort: 443
@@ -75,82 +75,16 @@ spec:
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
-  name: v1alpha1.acme.yourcompany.com
+  name: v1alpha1.acme.mjclouds.com
   labels:
     app: alidns-webhook
   annotations:
     cert-manager.io/inject-ca-from: "cert-manager/alidns-webhook-webhook-tls"
 spec:
-  group: acme.yourcompany.com
+  group: acme.mjclouds.com
   groupPriorityMinimum: 1000
   versionPriority: 15
   service:
     name: alidns-webhook
     namespace: cert-manager
   version: v1alpha1
-
----
-# Create a selfsigned Issuer, in order to create a root CA certificate for
-# signing webhook serving certificates
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: alidns-webhook-selfsign
-  namespace: cert-manager
-  labels:
-    app: alidns-webhook
-spec:
-  selfSigned: {}
-
----
-
-# Generate a CA Certificate used to sign certificates for the webhook
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: alidns-webhook-ca
-  namespace: cert-manager
-  labels:
-    app: alidns-webhook
-spec:
-  secretName: alidns-webhook-ca
-  duration: 43800h # 5y
-  issuerRef:
-    name: alidns-webhook-selfsign
-  commonName: "ca.alidns-webhook.cert-manager"
-  isCA: true
-
----
-
-# Create an Issuer that uses the above generated CA certificate to issue certs
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: alidns-webhook-ca
-  namespace: cert-manager
-  labels:
-    app: alidns-webhook
-spec:
-  ca:
-    secretName: alidns-webhook-ca
-
----
-
-# Finally, generate a serving certificate for the webhook to use
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: alidns-webhook-webhook-tls
-  namespace: cert-manager
-  labels:
-    app: alidns-webhook
-spec:
-  secretName: alidns-webhook-webhook-tls
-  duration: 8760h # 1y
-  issuerRef:
-    name: alidns-webhook-ca
-  dnsNames:
-  - alidns-webhook
-  - alidns-webhook.cert-manager
-  - alidns-webhook.cert-manager.svc
-  - alidns-webhook.cert-manager.svc.cluster.local
