@@ -1,6 +1,4 @@
-FROM golang:1.19-alpine AS build_deps
-
-RUN apk add --no-cache git
+FROM golang:1.19 AS builder
 
 WORKDIR /workspace
 ENV GO111MODULE=on
@@ -13,8 +11,11 @@ RUN CGO_ENABLED=0 go build -o webhook -ldflags '-w -extldflags "-static"' .
 
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates
+RUN  sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+    && apk update && apk add --no-cache tzdata ca-certificates \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone
 
-COPY --from=build /workspace/webhook /usr/local/bin/webhook
+COPY --from=builder /workspace/webhook /usr/local/bin/webhook
 
 ENTRYPOINT ["webhook"]
