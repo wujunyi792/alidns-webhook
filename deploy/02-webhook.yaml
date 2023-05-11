@@ -37,7 +37,7 @@ spec:
       serviceAccountName: alidns-webhook
       containers:
         - name: alidns-webhook
-          image: wujunyi792/alidns:sha-6bfb799a
+          image: wujunyi792/alidns:sha-6bg25
           imagePullPolicy: IfNotPresent
           args:
             - --tls-cert-file=/tls/tls.crt

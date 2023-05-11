@@ -143,7 +143,7 @@ roleRef:
 subjects:
   - apiGroup: ""
     kind: ServiceAccount
-    name: cert-manager
+    name: cert-manager-release
     namespace: cert-manager
 
 ---
